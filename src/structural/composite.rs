@@ -8,7 +8,7 @@
 mod dir {
     // https://chercher.tech/rust/composite-design-pattern-rust
     use std::fmt;
-    
+
     pub trait Entry {
         fn get_name(&self) -> String;
         fn get_size(&self) -> u32;
