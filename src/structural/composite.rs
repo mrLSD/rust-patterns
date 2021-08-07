@@ -4,73 +4,137 @@
 //! https://refactoring.guru/design-patterns/composite
 //!
 
-// The base Component class declares common operations for both simple and
-// complex objects of a composition.
-pub trait Component<T> {
-    // Optionally, the base Component can declare an interface for setting and
-    // accessing a parent of the component in a tree structure. It can also
-    // provide some default implementation for these methods.
-    fn set_parent(&mut self, _parent: T) {}
-    fn get_parent(&self) -> &Self {
-        self
-    }
-
-    // In some cases, it would be beneficial to define the child-management
-    // operations right in the base Component class. This way, you won't need to
-    // expose any concrete component classes to the client code, even during the
-    // object tree assembly. The downside is that these methods will be empty
-    // for the leaf-level components.
-    fn add(&mut self, _papam: T) {}
-    fn remove(&mut self, _parent: &Self) {}
-
-    // You can provide a method that lets the client code figure out whether a
-    // component can bear children.
-    fn is_composite(&self) -> bool {
-        false
-    }
-
-    // The base Component may implement some default behavior or leave it to
-    // concrete classes
-    fn operation(&self) -> String;
-}
-
-// The Leaf class represents the end objects of a composition. A leaf can't have
-// any children.
-//
-// Usually, it's the Leaf objects that do the actual work, whereas Composite
-// objects only delegate to their sub-components.
-/*
-pub struct Leaf<T: Component> {
-    pub parent: T,
-    pub children: Vec<T>,
-}
-
-impl<T: Component> Component for Leaf<T> {
-    fn operation(&self) -> String {
-        "Leaf".to_string()
-    }
-}
-*/
-pub struct Composite<T: Component<T>> {
-    pub parent: Option<T>,
-    pub children: Vec<T>,
-}
-
-impl<T: Component<T>> Component<T> for Composite<T> {
-    fn add(&mut self, component: T) {
-        self.children.push(component);
-    }
-    fn operation(&self) -> String {
-        "Composite".to_string()
-    }
-}
-
 #[cfg(test)]
-mod tests {
-    use crate::structural::composite::{Composite, Component};
+mod dir {
+    use std::fmt;
+
+    pub trait Entry {
+        fn get_name(&self) -> String;
+        fn get_size(&self) -> u32;
+        fn print_list(&self, prefix: String);
+        fn print(&self) {
+            self.print_list("".to_string());
+        }
+    }
+
+    #[derive(Clone)]
+    struct File {
+        name: String,
+        size: u32,
+    }
+
+    impl File {
+        fn new(name: String, size: u32) -> File {
+            File {
+                name: name,
+                size: size,
+            }
+        }
+    }
+
+    impl Entry for File {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn get_size(&self) -> u32 {
+            self.size
+        }
+
+        fn print_list(&self, prefix: String) {
+            println!("\t{}/{}", prefix, self)
+        }
+    }
+
+    impl fmt::Display for File {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "\t{} ({})", self.get_name(), self.get_size())
+        }
+    }
+
+    #[allow(dead_code)]
+    struct Directory {
+        name: String,
+        directory: Vec<Box<dyn Entry>>,
+        parent: Option<Box<dyn Entry>>,
+    }
+
+    impl Directory {
+        fn new(name: String, parent: Option<Box<dyn Entry>>) -> Directory {
+            Directory {
+                name: name,
+                directory: Vec::new(),
+                parent: parent,
+            }
+        }
+
+        fn add(&mut self, entry: Box<dyn Entry>) {
+            self.directory.push(entry);
+        }
+    }
+
+    impl Entry for Directory {
+        fn get_name(&self) -> String {
+            self.name.clone()
+        }
+
+        fn get_size(&self) -> u32 {
+            let mut size = 0;
+            for entry in &self.directory {
+                size += entry.get_size()
+            }
+            size
+        }
+
+        fn print_list(&self, prefix: String) {
+            println!("{}/{}", prefix, self);
+            for entry in &self.directory {
+                entry.print_list(format!("{}/{}", prefix, self.name));
+            }
+        }
+    }
+
+    impl fmt::Display for Directory {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{} ({})", self.get_name(), self.get_size())
+        }
+    }
 
     #[test]
-    fn test_leaf() {
+    fn test_dir() {
+        println!("Making root entries...");
+        let mut root_dir = Box::new(Directory::new("root".to_string(), None));
+        let mut bin_dir = Box::new(Directory::new("bin".to_string(), None));
+        let tmp_dir = Box::new(Directory::new("tmp".to_string(), None));
+        let mut usr_dir = Box::new(Directory::new("usr".to_string(), None));
 
+        bin_dir.add(Box::new(File::new("vi".to_string(), 10000)));
+        bin_dir.add(Box::new(File::new("latex".to_string(), 20000)));
+
+        root_dir.add(bin_dir);
+        root_dir.add(tmp_dir);
+
+        root_dir.print();
+
+        println!("\n");
+        println!("Making user entries..");
+        let mut yuki = Box::new(Directory::new("yuki".to_string(), None));
+        yuki.add(Box::new(File::new("diary.html".to_string(), 100)));
+        yuki.add(Box::new(File::new("Composite.java".to_string(), 200)));
+
+        let mut hanako = Box::new(Directory::new("hanako".to_string(), None));
+        hanako.add(Box::new(File::new("memo.tex".to_string(), 300)));
+
+        let mut tomura = Box::new(Directory::new("tomura".to_string(), None));
+        tomura.add(Box::new(File::new("game.doc".to_string(), 400)));
+        tomura.add(Box::new(File::new("jumk.mail".to_string(), 500)));
+
+        usr_dir.add(yuki);
+        usr_dir.add(hanako);
+        usr_dir.add(tomura);
+
+        root_dir.add(usr_dir);
+
+        root_dir.print();
     }
 }
