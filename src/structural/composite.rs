@@ -6,7 +6,7 @@
 
 // The base Component class declares common operations for both simple and
 // complex objects of a composition.
-trait Component {
+pub trait Component {
     // Optionally, the base Component can declare an interface for setting and
     // accessing a parent of the component in a tree structure. It can also
     // provide some default implementation for these methods.
@@ -39,15 +39,26 @@ trait Component {
 //
 // Usually, it's the Leaf objects that do the actual work, whereas Composite
 // objects only delegate to their sub-components.
-struct Leaf;
+pub struct Leaf<T: Component> {
+    pub parent: T,
+    pub children: Vec<T>,
+}
 
-impl Component for Leaf {
-    fn remove(&mut self, parent: &Self) {
-        let _ = parent;
-    }
-
+impl<T: Component> Component for Leaf<T> {
     fn operation(&self) -> String {
-        "Lead".to_string()
+        "Leaf".to_string()
+    }
+}
+
+pub struct Composite<T: Component> {
+    pub parent: T,
+    pub children: Vec<T>,
+}
+
+impl<T: Component> Component for Composite<T> {
+    fn add(&mut self, _parent: &Self) {}
+    fn operation(&self) -> String {
+        "Composite".to_string()
     }
 }
 
