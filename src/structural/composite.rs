@@ -6,11 +6,11 @@
 
 // The base Component class declares common operations for both simple and
 // complex objects of a composition.
-pub trait Component {
+pub trait Component<T> {
     // Optionally, the base Component can declare an interface for setting and
     // accessing a parent of the component in a tree structure. It can also
     // provide some default implementation for these methods.
-    fn set_parent(&mut self, _parent: &Self) {}
+    fn set_parent(&mut self, _parent: T) {}
     fn get_parent(&self) -> &Self {
         self
     }
@@ -20,7 +20,7 @@ pub trait Component {
     // expose any concrete component classes to the client code, even during the
     // object tree assembly. The downside is that these methods will be empty
     // for the leaf-level components.
-    fn add(&mut self, _parent: &Self) {}
+    fn add(&mut self, _papam: T) {}
     fn remove(&mut self, _parent: &Self) {}
 
     // You can provide a method that lets the client code figure out whether a
@@ -39,6 +39,7 @@ pub trait Component {
 //
 // Usually, it's the Leaf objects that do the actual work, whereas Composite
 // objects only delegate to their sub-components.
+/*
 pub struct Leaf<T: Component> {
     pub parent: T,
     pub children: Vec<T>,
@@ -49,14 +50,16 @@ impl<T: Component> Component for Leaf<T> {
         "Leaf".to_string()
     }
 }
-
-pub struct Composite<T: Component> {
-    pub parent: T,
+*/
+pub struct Composite<T: Component<T>> {
+    pub parent: Option<T>,
     pub children: Vec<T>,
 }
 
-impl<T: Component> Component for Composite<T> {
-    fn add(&mut self, _parent: &Self) {}
+impl<T: Component<T>> Component<T> for Composite<T> {
+    fn add(&mut self, component: T) {
+        self.children.push(component);
+    }
     fn operation(&self) -> String {
         "Composite".to_string()
     }
@@ -64,6 +67,10 @@ impl<T: Component> Component for Composite<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::structural::composite::{Composite, Component};
+
     #[test]
-    fn test_leaf() {}
+    fn test_leaf() {
+
+    }
 }
